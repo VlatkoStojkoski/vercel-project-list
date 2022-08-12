@@ -1,6 +1,10 @@
-import type { NextPage } from 'next';
+import type { InferGetServerSidePropsType, NextPage } from 'next';
 import Head from 'next/head';
 import { trpc } from '../utils/trpc';
+import { getTrpcUrl } from './_app';
+import { useEffect } from 'react';
+import Link from 'next/link';
+import { env } from '../env/client.mjs';
 
 type TechnologyCardProps = {
 	name: string;
@@ -8,9 +12,7 @@ type TechnologyCardProps = {
 	documentation: string;
 };
 
-const Home: NextPage = () => {
-	const hello = trpc.useQuery(['vercel.hello', { text: 'from tRPC' }]);
-
+const Home: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = ({ data: projects }) => {
 	return (
 		<>
 			<Head>
@@ -19,60 +21,44 @@ const Home: NextPage = () => {
 				<link rel="icon" href="/favicon.ico" />
 			</Head>
 
-			<main className="container mx-auto flex flex-col items-center justify-center min-h-screen p-4">
-				<h1 className="text-5xl md:text-[5rem] leading-normal font-extrabold text-gray-700">
-					Create <span className="text-purple-300">T3</span> App
-				</h1>
-				<p className="text-2xl text-gray-700">This stack uses:</p>
-				<div className="grid gap-3 pt-3 mt-3 text-center md:grid-cols-2 lg:w-2/3">
-					<TechnologyCard
-						name="NextJS"
-						description="The React framework for production"
-						documentation="https://nextjs.org/"
-					/>
-					<TechnologyCard
-						name="TypeScript"
-						description="Strongly typed programming language that builds on JavaScript, giving you better tooling at any scale"
-						documentation="https://www.typescriptlang.org/"
-					/>
-					<TechnologyCard
-						name="TailwindCSS"
-						description="Rapidly build modern websites without ever leaving your HTML"
-						documentation="https://tailwindcss.com/"
-					/>
-					<TechnologyCard
-						name="tRPC"
-						description="End-to-end typesafe APIs made easy"
-						documentation="https://trpc.io/"
-					/>
-				</div>
-				<div className="pt-6 text-2xl text-blue-500 flex justify-center items-center w-full">
-					{hello.data ? <p>{hello.data.greeting}</p> : <p>Loading..</p>}
-				</div>
-			</main>
+			{projects ?
+				<code className="container mx-auto flex flex-col items-center justify-center min-h-screen p-4">
+					{projects.map((project: any) =>
+						<div key={project.id} className='text-center my-3'>
+							<h2 className='text-xl italic'>{project.name}</h2>
+							<p className='text-sm'>
+								{new Date(project.createdAt).toDateString()}
+							</p>
+							{
+								(() => {
+									const domain =
+										project.domains.find((domain: any) => domain.apexName === env.NEXT_PUBLIC_VERCEL_APEX)?.name ||
+										project.domains[0].name;
+
+									return <Link href={`https://${domain}`} >
+										<a className='text-blue-500 hover:text-blue-600 hover:underline' target='_blank'>{domain}</a>
+									</Link>;
+								})()
+							}
+						</div>
+					)}
+				</code> :
+				<h1>Loading...</h1>
+			}
 		</>
 	);
 };
 
-const TechnologyCard = ({
-	name,
-	description,
-	documentation,
-}: TechnologyCardProps) => {
-	return (
-		<section className="flex flex-col justify-center p-6 duration-500 border-2 border-gray-500 rounded shadow-xl motion-safe:hover:scale-105">
-			<h2 className="text-lg text-gray-700">{name}</h2>
-			<p className="text-sm text-gray-600">{description}</p>
-			<a
-				className="mt-3 text-sm underline text-violet-500 decoration-dotted underline-offset-2"
-				href={documentation}
-				target="_blank"
-				rel="noreferrer"
-			>
-				Documentation
-			</a>
-		</section>
-	);
+export const getServerSideProps = async () => {
+	const qs = trpc.createClient({
+		url: getTrpcUrl(),
+	});
+
+	return {
+		props: {
+			data: (await qs.query('vercel.getAllDeployments') as any).json,
+		},
+	};
 };
 
 export default Home;
