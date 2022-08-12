@@ -5,6 +5,6 @@ export const vercelApiClient = axios.create({
 	baseURL: 'https://api.vercel.com',
 	timeout: 1000,
 	headers: {
-		Authorization: `Bearer ${env.VERCEL_AUTH_TOKEN}`,
+		Authorization: `Bearer ${env.SERVER_VERCEL_AUTH_TOKEN}`,
 	},
 });

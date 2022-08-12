@@ -6,8 +6,7 @@ import { z } from 'zod';
  * This way you can ensure the app isn't built with invalid env vars.
  */
 export const serverSchema = z.object({
-	VERCEL_AUTH_TOKEN: z.string(),
-	VERCEL_APEX: z.string(),
+	SERVER_VERCEL_AUTH_TOKEN: z.string(),
 });
 
 /**
